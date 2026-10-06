@@ -1,0 +1,99 @@
+---
+title: "Does Money Buy Years? Income and Life Expectancy Around the World"
+author: "Your Name"
+date: "2026-09-XX"
+format:
+  html:
+    code-fold: true
+    toc: true
+execute:
+  warning: false
+  message: false
+---
+
+```{r}
+#| include: false
+library(here); library(tidyverse); library(knitr)
+fit    <- read_csv(here("results/tables/preston_fit.csv"))
+gaps   <- read_csv(here("results/tables/income_group_gaps.csv"))
+latest <- as.integer(readLines(here("results/tables/latest_year.txt")))
+dbl_0  <- fit$per_doubling[fit$year == 1990]
+dbl_1  <- fit$per_doubling[fit$year == latest]
+gap_0  <- gaps$gap_high_low[gaps$year == 1990]
+gap_1  <- gaps$gap_high_low[gaps$year == latest]
+```
+
+## Question and motivation
+
+Richer countries tend to have healthier populations, but is the relationship strong,
+does it flatten out at high incomes, and have poor countries been catching up? This matters
+because if life expectancy depends on income alone, growth is the main lever; if the curve itself
+shifts over time (through medicine, sanitation, vaccines), health can improve even without growth.
+This relationship is known as the **Preston curve**. I use it to ask: *how has the link between
+income and life expectancy changed between 1990 and `r latest`?*
+
+## Data
+
+All data come from the World Bank's World Development Indicators, downloaded directly in R with
+the `WDI` package (see `code/01_get_data.R`):
+
+- **GDP per capita, PPP, constant 2021 international dollars.** Per-capita removes the effect of country size; PPP adjusts for price-level differences; *constant* dollars remove inflation so 1990 and `r latest` are comparable.
+- **Life expectancy at birth** (years).
+- **Population**, used for bubble sizes and population-weighted averages.
+
+I drop World Bank aggregates (World, regions, income groups) and keep country-year observations with all three variables. Because GDP is plotted on a log scale (a $1,000 gain matters far more to a country at $2,000 than at $60,000), I model life expectancy as a function of log income.
+
+## Figure 1: The cross-section today
+
+```{r}
+#| echo: false
+include_graphics(here("results/figures/fig1_preston_latest.png"))
+```
+
+The curve is steep at low incomes and flat at high incomes. Estimated from a regression of life
+expectancy on log GDP per capita, a **doubling of income is associated with about
+`r round(dbl_1, 1)` additional years** of life expectancy in `r latest`. There is also wide
+dispersion around the line: countries at similar incomes differ by many years, so income is not destiny.
+This is a correlation, not a causal effect; health also raises income.
+
+## Figure 2: The curve shifts
+
+```{r}
+#| echo: false
+include_graphics(here("results/figures/fig2_curve_shift.png"))
+```
+
+The 1990 and `r latest` curves are plotted together. The `r latest` curve sits above the 1990 curve:
+countries at the same income live longer today than in 1990, which points to
+non-income factors (medical technology, public health, vaccines). The arrows show that individual countries
+both moved right (growth) and up (health gains). The slope per income doubling was
+`r round(dbl_0, 1)` years in 1990 and `r round(dbl_1, 1)` years in `r latest`.
+
+## Figure 3: Convergence across income groups
+
+```{r}
+#| echo: false
+include_graphics(here("results/figures/fig3_income_groups.png"))
+```
+
+Population-weighted life expectancy rose in every income group. The gap between high- and
+low-income countries was **`r round(gap_0, 1)` years in 1990** and is
+**`r round(gap_1, 1)` years in `r latest`**. The figure also shows the temporary setback around 2020 to 2021,
+which coincides with COVID-19. (Note: income groups use the World Bank's *current* classification, so a country
+that grew rich is counted as high-income for all years.)
+
+## Takeaway
+
+Income and life expectancy are strongly and non-linearly related: gains per extra dollar are largest
+for the poorest countries. But income is not the whole story. The curve itself has moved upward
+since 1990, and the life expectancy gap between rich and poor countries has changed substantially,
+so health progress has partly been "free" of income growth. For policy, this suggests investments in
+low-cost health technology can pay off even where growth is slow.
+
+**Limitations.** The analysis is descriptive; income groups are fixed at today's classification;
+and national averages hide inequality within countries.
+
+## Reproducibility
+
+All code is in the [GitHub repository](https://github.com/YOUR-USERNAME/YOUR-REPO). Run `code/run_all.R`
+and render this file; see the README for details.
